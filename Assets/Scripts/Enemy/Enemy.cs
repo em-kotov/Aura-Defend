@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider), typeof(SpriteRenderer))]
@@ -12,6 +14,9 @@ public class Enemy : MonoBehaviour, IEnemy
 
     public Color AuraColor { get; private set; }
 
+    public event Action<Vector3, Enemy> Died;
+    public event Action Hit;
+
     virtual protected void Update()
     {
         CheckHealth();
@@ -25,6 +30,7 @@ public class Enemy : MonoBehaviour, IEnemy
         {
             if (bullet.AuraColor != AuraColor)
             {
+                bullet.Deactivate();
                 LooseHealth(_hitPoints);
             }
         }
@@ -43,18 +49,25 @@ public class Enemy : MonoBehaviour, IEnemy
     {
         if (_health <= 0)
         {
-            Deactivate();
+            Die();
         }
     }
 
-    private void Deactivate()
+    private void Die()
     {
+        // _renderer.enabled = false;
+        Died?.Invoke(transform.position, this);
         gameObject.SetActive(false);
     }
 
     private void LooseHealth(float points)
     {
         _health -= points;
+
+        if (_health > 0)
+        {
+            Hit?.Invoke();
+        }
     }
 
     private Color SetAlpha(Color color, float alpha)

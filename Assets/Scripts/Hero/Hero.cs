@@ -12,6 +12,8 @@ public class Hero : MonoBehaviour
     private float _hitPoints = 1f;
 
     public event Action<Aura> CollectedAura;
+    public event Action<Vector3> Died;
+    public event Action Hit;
 
     private void Start()
     {
@@ -47,11 +49,16 @@ public class Hero : MonoBehaviour
 
     private void Deactivate()
     {
+        Died?.Invoke(transform.position);
+        Collider collider = GetComponent<Collider>();
+        collider.enabled = false;
+        gameObject.SetActive(false);
         Debug.Log("you died");
     }
 
     private void LooseHealth(float points)
     {
+       Hit?.Invoke();
         _health -= points;
     }
 

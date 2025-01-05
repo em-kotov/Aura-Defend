@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 
 [RequireComponent(typeof(SpriteRenderer))]
 public class Aura : MonoBehaviour
@@ -9,9 +10,12 @@ public class Aura : MonoBehaviour
 
     private SpriteRenderer _renderer;
 
+    public event Action<Vector3, Aura> Collected;
+
     public void Deactivate()
     {
         CanCollect = false;
+        Collected?.Invoke(transform.position, this);
         gameObject.SetActive(false);
     }
 
@@ -25,7 +29,7 @@ public class Aura : MonoBehaviour
     {
         return _renderer.sprite;
     }
-    
+
     public Color GetColor()
     {
         return _renderer.color;

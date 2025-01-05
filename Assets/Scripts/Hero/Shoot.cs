@@ -7,6 +7,7 @@ public class Shoot : MonoBehaviour
     [SerializeField] private Bullet _bulletPrefab;
     [SerializeField] private float _shootSpeed = 10f;
     [SerializeField] private float _shootRadius = 20f;
+    [SerializeField] private AudioSource _shootAudio;
 
     private Coroutine _shootingCoroutine;
 
@@ -25,6 +26,7 @@ public class Shoot : MonoBehaviour
         Bullet bullet = Instantiate(_bulletPrefab, transform.position, Quaternion.identity);
         bullet.SetAuraColor(color);
         bullet.AddForce(GetShootingDirection() * _shootSpeed);
+        PlaySound();
     }
 
     private IEnumerator StandardShoot(float duration, float delay, Color color)
@@ -53,5 +55,10 @@ public class Shoot : MonoBehaviour
         }
 
         return direction;
+    }
+
+    private void PlaySound()
+    {
+        _shootAudio.Play();
     }
 }

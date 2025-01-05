@@ -1,6 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameHandler : MonoBehaviour
 {
@@ -17,7 +19,7 @@ public class GameHandler : MonoBehaviour
         13,
         21
     };
-    
+
     [SerializeField]
     private int[] _enemiesCount = new int[]{
         2,
@@ -30,11 +32,17 @@ public class GameHandler : MonoBehaviour
     private int _waveIndex = 0;
     private Coroutine _startWaveWithDelayCoroutine;
 
-    //sound, aura stack, game end,  hero hit
+    public event Action Won;
 
     private void Start()
     {
+        _enemySpawner.EnemiesDied += OnEnemiesDied;
         _startWaveWithDelayCoroutine = StartCoroutine(StartWaveWithDelay());
+    }
+
+    public void OnHeroDeath(Vector3 position)
+    {
+        StartCoroutine(ReloadWithDelay(2.5f));
     }
 
     private void CreateWave(int waveIndex)
@@ -50,7 +58,7 @@ public class GameHandler : MonoBehaviour
     {
         WaitForSeconds delay = new WaitForSeconds(_waveDelay);
 
-        while(_waveIndex<_enemiesCount.Length)
+        while (_waveIndex < _enemiesCount.Length)
         {
             CreateWave(_waveIndex);
             _waveIndex++;
@@ -58,6 +66,25 @@ public class GameHandler : MonoBehaviour
         }
 
         _startWaveWithDelayCoroutine = null;
+    }
+
+    private void OnEnemiesDied()
+    {
+        if (_waveIndex >= _enemiesCount.Length)
+        {
+            Won?.Invoke();
+            _enemySpawner.EnemiesDied -= OnEnemiesDied;
+        }
+    }
+
+    private IEnumerator ReloadWithDelay(float seconds)
+    {
+        WaitForSeconds delay = new WaitForSeconds(seconds);
+        yield return delay;
+
+        _enemySpawner.EnemiesDied -= OnEnemiesDied;
+
+        SceneManager.LoadScene("Aura Defend");
     }
 
     private List<Color> GetColors(int count)

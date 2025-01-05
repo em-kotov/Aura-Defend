@@ -5,6 +5,8 @@ public class AuraSpawner : MonoBehaviour
 {
     [SerializeField] private Aura _auraPrefab;
     [SerializeField] private Hero _hero;
+    [SerializeField] private ParticleSystem _collectExplosion;
+    [SerializeField] private AudioSource _collectAudio;
 
     [Header("Spawn Settings")]
     [SerializeField] private float _minDistanceFromHero = 5f;
@@ -35,7 +37,21 @@ public class AuraSpawner : MonoBehaviour
     private void CreateSingle(Vector3 position, Color color)
     {
         Aura aura = Instantiate(_auraPrefab, position, Quaternion.identity);
+        aura.Collected += OnCollect;
         aura.Initialize(color);
+    }
+
+    private void OnCollect(Vector3 position, Aura aura)
+    {
+        aura.Collected -= OnCollect;
+
+        ParticleSystem effect = Instantiate(_collectExplosion, position, Quaternion.identity);
+        effect.Play();
+        
+        _collectAudio.Play();
+
+        float duration = effect.main.duration;
+        Destroy(effect.gameObject, duration);
     }
 
     private List<Vector2> GetAvailableSpawnPositions()

@@ -1,18 +1,26 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 public class EnemySpawner : MonoBehaviour
 {
     [SerializeField] private LinearFollower _linearFollower;
     [SerializeField] private AdaptiveFollower _adaptiveFollower;
     [SerializeField] private Hero _hero;
-    [SerializeField] private float _alpha = 180f;
+    [SerializeField] private float _alpha = 250;
+    [SerializeField] private ParticleSystem _dieExplosion;
+    [SerializeField] private AudioSource _enemyHitAudio;
+    [SerializeField] private AudioSource _enemyDieAudio;
 
     [Header("Spawn Settings")]
     [SerializeField] private float _minDistanceFromHero = 10f;
     [SerializeField] private Vector2 _gridSize = new Vector2(30f, 16f);
     [SerializeField] private float _cellSize = 1f;
     [SerializeField] private float _positionZ = 7f;
+
+    private List<Enemy> _currentEnemies = new List<Enemy>();
+
+    public event Action EnemiesDied;
 
     public void Spawn(int count, List<Color> colors)
     {
@@ -21,7 +29,7 @@ public class EnemySpawner : MonoBehaviour
         for (int i = 0; i < count && availablePositions.Count > 0; i++)
         {
             // Get random position from pre-calculated available positions
-            int randomIndex = Random.Range(0, availablePositions.Count);
+            int randomIndex = UnityEngine.Random.Range(0, availablePositions.Count);
 
             Vector3 spawnPosition = new Vector3(
                 availablePositions[randomIndex].x,
@@ -49,12 +57,39 @@ public class EnemySpawner : MonoBehaviour
             enemy = Instantiate(_linearFollower, position, Quaternion.identity);
         }
 
+        enemy.Died += OnDeath;
+        enemy.Hit += OnHit;
         enemy.Initialize(color, _alpha, _hero);
+        _currentEnemies.Add(enemy);
     }
 
     private int GetRandomEnemyType()
     {
-        return Random.Range(0, 2);
+        return UnityEngine.Random.Range(0, 2);
+    }
+
+    private void OnHit()
+    {
+        _enemyHitAudio.Play();
+    }
+
+    private void OnDeath(Vector3 position, Enemy enemy)
+    {
+        _currentEnemies.Remove(enemy);
+        enemy.Died -= OnDeath;
+        enemy.Hit -= OnHit;
+
+        ParticleSystem effect = Instantiate(_dieExplosion, position, Quaternion.identity);
+        effect.Play();
+        _enemyDieAudio.Play();
+
+        float duration = effect.main.duration;
+        Destroy(effect.gameObject, duration);
+
+        if(_currentEnemies.Count ==0)
+        {
+            EnemiesDied?.Invoke();
+        }
     }
 
     private List<Vector2> GetAvailableSpawnPositions()
